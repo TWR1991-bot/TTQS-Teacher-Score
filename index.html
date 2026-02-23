@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>師資遴選管理系統</title>
+    <!-- 引入 React, Babel 與 Tailwind CSS -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        
+        // --- 配置區 ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbyejinkW2h7FjCl7A7Yqv8oJB-lS7uIJJzhKjEvP3iZXzor7BxuHRFa2WMYwRGzgJVrfw/exec";
+
+        // Lucide 圖示封裝組件
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const [iconNode, setIconNode] = useState(null);
+            useEffect(() => {
+                if (window.lucide) {
+                    const icon = window.lucide.icons[name];
+                    if (icon) {
+                        const svg = icon.toSvg({ size, class: className });
+                        setIconNode(svg);
+                    }
+                }
+            }, [name, size, className]);
+            return iconNode ? <span dangerouslySetInnerHTML={{ __html: iconNode }} /> : <span style={{ width: size, height: size, display: 'inline-block' }}></span>;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('login'); 
+            const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+            const [selectedEvaluator, setSelectedEvaluator] = useState(null);
+            const [loading, setLoading] = useState(false);
+            
+            // 資料狀態
+            const [evaluators, setEvaluators] = useState([]);
+            const [forms, setForms] = useState([]);
+            const [scores, setScores] = useState([]);
+
+            // --- 資料讀取與同步 ---
+            const fetchData = async () => {
+                if (!API_URL) return;
+                setLoading(true);
+                try {
+                    const resp = await fetch(API_URL);
+                    const data = await resp.json();
+                    setEvaluators(data.evaluators || []);
+                    setForms(data.forms || []);
+                    setScores(data.scores || []);
+                } catch (err) {
+                    console.error("連線錯誤:", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const apiCall = async (sheet, action, data) => {
+                setLoading(true);
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ sheet, action, data })
+                    });
+                    await fetchData(); 
+                } catch (err) {
+                    alert("與試算表同步失敗，請確認網路或 API 設定");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // --- 登入邏輯 ---
+            const handleAdminLogin = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const id = formData.get('adminId');
+                const pwd = formData.get('password');
+                if (id === 'Admin01' && pwd === '76380260') {
+                    setAdminLoggedIn(true);
+                    setView('admin_dashboard');
+                } else {
+                    alert("密碼不正確！");
+                }
+            };
+
+            const handleEvaluatorLogin = (evalId) => {
+                const ev = evaluators.find(e => e.id === evalId);
+                setSelectedEvaluator(ev);
+                setView('evaluator_dashboard');
+            };
+
+            const logout = () => {
+                setAdminLoggedIn(false);
+                setSelectedEvaluator(null);
+                setView('login');
+            };
+
+            const [adminSubTab, setAdminSubTab] = useState('forms');
+
+            // --- 視圖呈現 ---
+            if (view === 'login') return (
+                <LoginView 
+                    evaluators={evaluators} 
+                    onAdminLogin={handleAdminLogin} 
+                    onEvalLogin={handleEvaluatorLogin} 
+                    loading={loading} 
+                    Icon={Icon}
+                />
+            );
+
+            return (
+                <div className="min-h-screen">
+                    {/* 導覽列 */}
+                    <nav className="bg-indigo-800 text-white p-4 shadow-lg flex justify-between items-center no-print">
+                        <div className="flex items-center gap-3">
+                            <Icon name="FileText" size={24} />
+                            <h1 className="text-xl font-black tracking-tighter">師資遴選管理系統</h1>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button onClick={fetchData} className={`p-2 hover:bg-indigo-700 rounded-full transition-all ${loading ? 'animate-spin opacity-50' : ''}`} disabled={loading}>
+                                <Icon name="RefreshCw" />
+                            </button>
+                            <span className="text-sm font-bold bg-indigo-900 px-3 py-1 rounded-full border border-indigo-500">
+                                {adminLoggedIn ? "管理員 (Admin01)" : `委員: ${selectedEvaluator?.name}`}
+                            </span>
+                            <button onClick={logout} className="p-2 hover:bg-red-500 rounded-full transition-all border border-transparent hover:border-red-400">
+                                <Icon name="LogOut" />
+                            </button>
+                        </div>
+                    </nav>
+
+                    {loading && <div className="h-1 bg-indigo-400 animate-pulse w-full no-print"></div>}
+
+                    <main className="max-w-7xl mx-auto p-4 md:p-8">
+                        {adminLoggedIn ? (
+                            <div className="flex flex-col gap-6">
+                                {/* 分頁標籤 */}
+                                <div className="flex gap-2 overflow-x-auto pb-2 no-print bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+                                    <TabBtn active={adminSubTab==='evaluators'} onClick={()=>setAdminSubTab('evaluators')} icon="Users" label="人員管理" Icon={Icon} />
+                                    <TabBtn active={adminSubTab==='forms'} onClick={()=>setAdminSubTab('forms')} icon="Plus" label="遴選表管理" Icon={Icon} />
+                                    <TabBtn active={adminSubTab==='reports'} onClick={()=>setAdminSubTab('reports')} icon="FileText" label="遴選報告" Icon={Icon} />
+                                    <TabBtn active={adminSubTab==='stats'} onClick={()=>setAdminSubTab('stats')} icon="BarChart2" label="平均分數統計" Icon={Icon} />
+                                </div>
+
+                                {adminSubTab === 'evaluators' && <EvaluatorManager evaluators={evaluators} onApi={apiCall} Icon={Icon} />}
+                                {adminSubTab === 'forms' && <FormManager forms={forms} onApi={apiCall} Icon={Icon} />}
+                                {adminSubTab === 'reports' && <ReportManager forms={forms} scores={scores} Icon={Icon} />}
+                                {adminSubTab === 'stats' && <StatsView forms={forms} scores={scores} Icon={Icon} />}
+                            </div>
+                        ) : (
+                            <EvaluatorScoringView 
+                                evaluator={selectedEvaluator} 
+                                forms={forms} 
+                                scores={scores} 
+                                onApi={apiCall} 
+                                Icon={Icon}
+                            />
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        // --- 子組件清單 ---
+
+        const LoginView = ({ evaluators, onAdminLogin, onEvalLogin, loading, Icon }) => (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-4">
+                <div className="bg-white rounded-[2rem] shadow-2xl p-10 w-full max-w-md border border-white/10 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="text-center mb-10">
+                        <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-200">
+                            <Icon name="Users" size={32} />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tighter">師資遴選入口</h2>
+                        <p className="text-slate-400 mt-2 font-bold text-sm uppercase tracking-widest">Teacher Selection System</p>
+                    </div>
+
+                    <div className="space-y-10">
+                        {/* 管理員登入 */}
+                        <form onSubmit={onAdminLogin} className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">管理員通道</h3>
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                            </div>
+                            <select name="adminId" className="w-full p-4 border-2 border-slate-50 rounded-2xl focus:border-indigo-500 outline-none transition-all font-black text-slate-700 bg-slate-50">
+                                <option value="Admin01">Admin01</option>
+                            </select>
+                            <input type="password" name="password" placeholder="請輸入管理密碼" className="w-full p-4 border-2 border-slate-50 rounded-2xl focus:border-indigo-500 outline-none transition-all bg-slate-50 font-bold" />
+                            <button type="submit" className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-200 active:scale-95">
+                                管理端登入
+                            </button>
+                        </form>
+
+                        {/* 評分人員 */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">評分委員通道</h3>
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                {loading ? (
+                                    <div className="text-center py-8">
+                                        <div className="animate-spin text-indigo-500 inline-block mb-2">
+                                            <Icon name="RefreshCw" size={24} />
+                                        </div>
+                                        <p className="text-xs text-slate-400 font-black">正在從 Google Sheets 獲取資料...</p>
+                                    </div>
+                                ) : evaluators.length === 0 ? (
+                                    <p className="text-center text-slate-300 py-10 italic border-2 border-dashed border-slate-50 rounded-2xl font-bold">目前無人員資料</p>
+                                ) : (
+                                    evaluators.map(ev => (
+                                        <button 
+                                            key={ev.id} 
+                                            onClick={() => onEvalLogin(ev.id)} 
+                                            className="group flex items-center justify-between p-5 border-2 border-slate-50 rounded-2xl hover:bg-indigo-50 hover:border-indigo-200 transition-all text-left bg-slate-50/50"
+                                        >
+                                            <div>
+                                                <div className="font-black text-slate-700 group-hover:text-indigo-700 transition-colors">{ev.name}</div>
+                                                <div className="text-xs text-slate-400 font-bold">{ev.title}</div>
+                                            </div>
+                                            <div className="bg-white p-2 rounded-xl shadow-sm text-slate-300 group-hover:text-indigo-600 transition-all">
+                                                <Icon name="ChevronRight" size={18} />
+                                            </div>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const TabBtn = ({ active, onClick, icon, label, Icon }) => (
+            <button 
+                onClick={onClick} 
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black transition-all whitespace-nowrap ${
+                    active 
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
+                        : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
+                }`}
+            >
+                <Icon name={icon} size={18} /> {label}
+            </button>
+        );
+
+        // 人員管理
+        const EvaluatorManager = ({ evaluators, onApi, Icon }) => {
+            const [editing, setEditing] = useState(false);
+            const [formData, setFormData] = useState({ name: '', title: '' });
+
+            const save = (e) => {
+                e.preventDefault();
+                onApi('evaluators', 'add', { ...formData, id: Date.now().toString() });
+                setFormData({ name: '', title: '' });
+                setEditing(false);
+            };
+
+            return (
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                        <h3 className="font-black text-slate-800">評分委員資料維護</h3>
+                        {!editing && (
+                            <button onClick={() => setEditing(true)} className="bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-black shadow-sm hover:bg-indigo-700 transition-all flex items-center gap-2">
+                                <Icon name="Plus" size={16} /> 新增委員
+                            </button>
+                        )}
+                    </div>
+                    {editing && (
+                        <form onSubmit={save} className="p-6 bg-indigo-50 border-b flex flex-wrap gap-4 items-end animate-in fade-in duration-300">
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="block text-[10px] font-black text-indigo-900 mb-1 uppercase tracking-widest">姓名</label>
+                                <input required value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-3 border-2 border-indigo-100 rounded-xl bg-white outline-none focus:border-indigo-400 font-bold" placeholder="請輸入姓名"/>
+                            </div>
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="block text-[10px] font-black text-indigo-900 mb-1 uppercase tracking-widest">職稱</label>
+                                <input required value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full p-3 border-2 border-indigo-100 rounded-xl bg-white outline-none focus:border-indigo-400 font-bold" placeholder="請輸入職稱"/>
+                            </div>
+                            <div className="flex gap-2">
+                                <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded-xl font-black shadow-md hover:bg-green-700 transition-all">儲存資料</button>
+                                <button type="button" onClick={()=>setEditing(false)} className="bg-slate-200 text-slate-600 px-8 py-3 rounded-xl font-black">取消</button>
+                            </div>
+                        </form>
+                    )}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b">
+                                    <th className="px-8 py-4">姓名</th>
+                                    <th className="px-8 py-4">職稱</th>
+                                    <th className="px-8 py-4 text-right">管理操作</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {evaluators.map(ev => (
+                                    <tr key={ev.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-8 py-5 font-black text-slate-700">{ev.name}</td>
+                                        <td className="px-8 py-5 text-slate-500 font-bold">{ev.title}</td>
+                                        <td className="px-8 py-5 text-right">
+                                            <button onClick={()=>confirm('確定刪除？') && onApi('evaluators', 'delete', ev)} className="text-slate-300 hover:text-red-600 p-2 transition-all rounded-lg hover:bg-red-50">
+                                                <Icon name="Trash2" size={18}/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        // 遴選表管理
+        const FormManager = ({ forms, onApi, Icon }) => {
+            const [editing, setEditing] = useState(false);
+            const [formData, setFormData] = useState({
+                courseName: '', 
+                year: new Date().getFullYear().toString(), 
+                instructors: [{name: '', type: 'internal'}],
+                scoringItems: [
+                    {label: '教學技巧與邏輯能力', weight: 40}, 
+                    {label: '教材內容與實務應用', weight: 40},
+                    {label: '與學員互動表達', weight: 20}
+                ],
+                status: 'active'
+            });
+
+            const save = (e) => {
+                e.preventDefault();
+                const sum = formData.scoringItems.reduce((acc, cur) => acc + parseInt(cur.weight || 0), 0);
+                if (sum !== 100) return alert(`加權占比合計須為 100% (目前: ${sum}%)`);
+                onApi('forms', 'add', { ...formData, id: Date.now().toString() });
+                setEditing(false);
+            };
+
+            const copyForm = (form) => {
+                setFormData({ ...form, id: undefined, courseName: `${form.courseName} (副本)` });
+                setEditing(true);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-800 tracking-tighter">課程遴選表</h3>
+                            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Form Management</p>
+                        </div>
+                        {!editing && (
+                            <button onClick={()=>setEditing(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">
+                                <Icon name="Plus" size={20}/> 建立遴選表
+                            </button>
+                        )}
+                    </div>
+
+                    {editing && (
+                        <form onSubmit={save} className="bg-white p-8 rounded-[2rem] border-2 border-indigo-50 shadow-sm space-y-8 animate-in fade-in zoom-in-95">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">課程名稱</label>
+                                    <input required className="w-full p-4 border-2 border-slate-50 rounded-2xl focus:border-indigo-400 outline-none transition-all font-bold bg-slate-50/50" placeholder="例如：113 年度領導力發展課程" value={formData.courseName} onChange={e=>setFormData({...formData, courseName: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">開課年度</label>
+                                    <input required className="w-full p-4 border-2 border-slate-50 rounded-2xl focus:border-indigo-400 outline-none transition-all font-bold bg-slate-50/50" placeholder="例如：2024" value={formData.year} onChange={e=>setFormData({...formData, year: e.target.value})} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                    <label className="text-sm font-black text-slate-800">指定受評講師 (上限 4 位)</label>
+                                    {formData.instructors.length < 4 && (
+                                        <button type="button" className="text-indigo-600 text-xs font-black hover:underline" onClick={()=>setFormData({...formData, instructors: [...formData.instructors, {name: '', type: 'internal'}]})}>+ 新增講師</button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {formData.instructors.map((ins, i) => (
+                                        <div key={i} className="flex gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 items-center">
+                                            <input required className="flex-1 p-3 border-2 border-transparent focus:border-indigo-200 rounded-xl bg-white outline-none font-bold text-sm shadow-sm" placeholder="姓名" value={ins.name} onChange={e => {
+                                                const copy = [...formData.instructors]; copy[i].name = e.target.value; setFormData({...formData, instructors: copy});
+                                            }} />
+                                            <select value={ins.type} onChange={e => {
+                                                const copy = [...formData.instructors]; copy[i].type = e.target.value; setFormData({...formData, instructors: copy});
+                                            }} className="p-3 border-2 border-transparent bg-white rounded-xl font-black text-xs outline-none shadow-sm">
+                                                <option value="internal">內部</option><option value="external">外聘</option>
+                                            </select>
+                                            {i > 0 && <button type="button" className="text-red-400 p-2 hover:bg-red-50 rounded-lg transition-all" onClick={()=>setFormData({...formData, instructors: formData.instructors.filter((_, idx)=>idx!==i)})}>×</button>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                    <label className="text-sm font-black text-slate-800">評分項目與加權 (合計 100%)</label>
+                                    <button type="button" className="text-indigo-600 text-xs font-black hover:underline" onClick={()=>setFormData({...formData, scoringItems: [...formData.scoringItems, {label: '', weight: 0}]})}>+ 新增項目</button>
+                                </div>
+                                <div className="space-y-3">
+                                    {formData.scoringItems.map((item, i) => (
+                                        <div key={i} className="flex gap-4 items-center">
+                                            <input required className="flex-1 p-4 border-2 border-slate-50 rounded-2xl focus:border-indigo-200 outline-none font-bold bg-slate-50/50" placeholder="評分項目名稱" value={item.label} onChange={e => {
+                                                const copy = [...formData.scoringItems]; copy[i].label = e.target.value; setFormData({...formData, scoringItems: copy});
+                                            }} />
+                                            <div className="flex items-center gap-2">
+                                                <input type="number" className="w-24 p-4 border-2 border-slate-50 rounded-2xl text-center font-black focus:border-indigo-400 outline-none bg-slate-50/50" placeholder="%" value={item.weight} onChange={e => {
+                                                    const copy = [...formData.scoringItems]; copy[i].weight = e.target.value; setFormData({...formData, scoringItems: copy});
+                                                }} />
+                                                <span className="font-black text-slate-300">%</span>
+                                            </div>
+                                            {i > 0 && <button type="button" className="text-red-400 p-2 hover:bg-red-50 rounded-lg" onClick={()=>setFormData({...formData, scoringItems: formData.scoringItems.filter((_, idx)=>idx!==i)})}>刪除</button>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                                <button type="button" onClick={()=>setEditing(false)} className="px-10 py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-100 transition-all">取消</button>
+                                <button type="submit" className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">儲存並建立遴選</button>
+                            </div>
+                        </form>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {forms.map(form => (
+                            <div key={form.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group hover:border-indigo-300 transition-all relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                                    <button onClick={()=>copyForm(form)} className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="複製此表單"><Icon name="Copy" size={16}/></button>
+                                    <button onClick={()=>confirm('確定刪除此表單？') && onApi('forms', 'delete', form)} className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"><Icon name="Trash2" size={16}/></button>
+                                </div>
+                                <div className="text-[10px] font-black text-indigo-500 bg-indigo-50 w-fit px-3 py-1 rounded-full mb-4 uppercase tracking-[0.2em]">{form.year} 年度</div>
+                                <h4 className="font-black text-slate-800 text-xl mb-4 leading-tight group-hover:text-indigo-700 transition-colors">{form.courseName}</h4>
+                                <div className="space-y-2">
+                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">受評講師</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {form.instructors.map((ins, i) => (
+                                            <span key={i} className={`text-xs px-2 py-1 rounded-lg font-bold border ${ins.type==='internal'?'bg-blue-50 border-blue-100 text-blue-700':'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                                                {ins.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // 評分人員視圖
+        const EvaluatorScoringView = ({ evaluator, forms, scores, onApi, Icon }) => {
+            const [selectedForm, setSelectedForm] = useState(null);
+            const [localScore, setLocalScore] = useState(null);
+
+            const start = (form) => {
+                setSelectedForm(form);
+                const existing = scores.find(s => s.formId === form.id && s.evaluatorId === evaluator.id);
+                setLocalScore(existing || {
+                    id: Date.now().toString(),
+                    formId: form.id, 
+                    evaluatorId: evaluator.id, 
+                    evaluatorName: evaluator.name,
+                    instructorScores: form.instructors.map(() => ({ 
+                        itemScores: form.scoringItems.map(() => 0), 
+                        comment: '' 
+                    }))
+                });
+            };
+
+            const submit = () => {
+                const action = scores.some(s => s.id === localScore.id) ? 'update' : 'add';
+                onApi('scores', action, localScore);
+                alert("評分已儲存！資料已同步至試算表。");
+                setSelectedForm(null);
+            };
+
+            if (selectedForm) {
+                return (
+                    <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-8 duration-500">
+                        <div className="flex justify-between items-center">
+                            <button onClick={()=>setSelectedForm(null)} className="text-slate-400 hover:text-slate-800 font-black flex items-center gap-2 transition-all">
+                                <Icon name="ChevronRight" size={18} className="rotate-180" /> 返回列表
+                            </button>
+                            <div className="text-right">
+                                <h2 className="text-3xl font-black text-slate-800 tracking-tighter">{selectedForm.courseName}</h2>
+                                <p className="text-indigo-600 font-bold text-sm">委員：{evaluator.name}</p>
+                            </div>
+                        </div>
+
+                        {selectedForm.instructors.map((ins, insIdx) => (
+                            <div key={insIdx} className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-slate-50 relative overflow-hidden group">
+                                <div className={`absolute left-0 top-0 bottom-0 w-2 transition-all group-hover:w-4 ${ins.type==='internal'?'bg-blue-500':'bg-amber-500'}`}></div>
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+                                    <h3 className="text-2xl font-black text-slate-800">{ins.name} <span className="text-xs text-slate-400 ml-2 font-bold uppercase tracking-widest">({ins.type==='internal'?'內部講師':'外聘講師'})</span></h3>
+                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">評分表單</div>
+                                </div>
+                                
+                                <div className="space-y-8">
+                                    {selectedForm.scoringItems.map((item, itemIdx) => (
+                                        <div key={itemIdx} className="flex flex-col md:flex-row md:items-center gap-6">
+                                            <div className="flex-1">
+                                                <div className="font-black text-slate-700">{item.label}</div>
+                                                <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">權重：{item.weight}%</div>
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                <input 
+                                                    type="range" min="0" max="100" step="1"
+                                                    className="w-48 h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                    value={localScore.instructorScores[insIdx].itemScores[itemIdx]}
+                                                    onChange={e => {
+                                                        const copy = {...localScore}; copy.instructorScores[insIdx].itemScores[itemIdx] = parseInt(e.target.value || 0); setLocalScore(copy);
+                                                    }}
+                                                />
+                                                <input 
+                                                    type="number" min="0" max="100"
+                                                    className="w-24 p-4 border-2 border-slate-100 rounded-2xl text-center font-black focus:border-indigo-400 outline-none transition-all bg-slate-50/50" 
+                                                    value={localScore.instructorScores[insIdx].itemScores[itemIdx]} 
+                                                    onChange={e => {
+                                                        const val = Math.min(100, Math.max(0, parseInt(e.target.value || 0)));
+                                                        const copy = {...localScore}; copy.instructorScores[insIdx].itemScores[itemIdx] = val; setLocalScore(copy);
+                                                    }} 
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    <div className="pt-8 border-t border-slate-100 mt-6">
+                                        <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">講師綜合評語</label>
+                                        <textarea 
+                                            className="w-full p-6 border-2 border-slate-50 rounded-[1.5rem] min-h-[140px] focus:border-indigo-200 outline-none font-bold transition-all bg-slate-50/50" 
+                                            placeholder="請輸入您對此位講師的專業意見或改進建議..." 
+                                            value={localScore.instructorScores[insIdx].comment} 
+                                            onChange={e => {
+                                                const copy = {...localScore}; copy.instructorScores[insIdx].comment = e.target.value; setLocalScore(copy);
+                                            }} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-50">
+                            <button onClick={submit} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+                                <Icon name="Save" size={20}/> 儲存評分並完成遴選
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-12">
+                    <div className="text-center md:text-left">
+                        <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">您好，{evaluator.name} 委員</h2>
+                        <p className="text-slate-400 font-bold mt-2 uppercase tracking-widest text-sm">請選擇待評分課程專案</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {forms.map(f => {
+                            const isDone = scores.some(s => s.formId === f.id && s.evaluatorId === evaluator.id);
+                            return (
+                                <div key={f.id} className="bg-white p-8 rounded-[2rem] border-2 border-slate-50 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
+                                    {isDone && (
+                                        <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
+                                            已完成評分
+                                        </div>
+                                    )}
+                                    <div className="text-[10px] font-black text-indigo-400 mb-4 uppercase tracking-widest">{f.year} 年度專案</div>
+                                    <h4 className="text-2xl font-black text-slate-800 mb-8 leading-tight group-hover:text-indigo-600 transition-colors h-20 overflow-hidden line-clamp-2">{f.courseName}</h4>
+                                    <button 
+                                        onClick={()=>start(f)} 
+                                        className={`w-full py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 ${
+                                            isDone 
+                                                ? 'bg-slate-100 text-slate-400' 
+                                                : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700'
+                                        }`}
+                                    >
+                                        {isDone ? '修改評分' : '開始遴選評分'}
+                                        {!isDone && <Icon name="ChevronRight" size={18}/>}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // 報告管理
+        const ReportManager = ({ forms, scores, Icon }) => {
+            const [selected, setSelected] = useState(null);
+            const currentScores = scores.filter(s => s.formId === selected?.id);
+
+            const calculateAvg = (insIdx) => {
+                if (currentScores.length === 0) return 0;
+                const total = currentScores.reduce((acc, s) => {
+                    const insScore = s.instructorScores[insIdx];
+                    return acc + insScore.itemScores.reduce((itemAcc, val, itemIdx) => itemAcc + (val * selected.scoringItems[itemIdx].weight) / 100, 0);
+                }, 0);
+                return (total / currentScores.length).toFixed(1);
+            };
+
+            if (selected) {
+                return (
+                    <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 print:border-none print:p-0 animate-in zoom-in-95 duration-500 shadow-sm">
+                        <div className="flex justify-between items-center mb-12 no-print">
+                            <button onClick={()=>setSelected(null)} className="text-slate-400 hover:text-indigo-600 font-black flex items-center gap-2 transition-all">
+                                <Icon name="ChevronRight" size={18} className="rotate-180" /> 返回報告清單
+                            </button>
+                            <button onClick={()=>window.print()} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all flex items-center gap-2">
+                                <Icon name="Printer" size={20}/> 列印完整遴選報告書
+                            </button>
+                        </div>
+
+                        <div className="max-w-5xl mx-auto space-y-12">
+                            <div className="text-center">
+                                <h2 className="text-4xl font-black text-slate-900 tracking-[0.3em] border-b-8 border-slate-900 inline-block pb-4 mb-6">師資遴選審核報告</h2>
+                                <div className="flex justify-between text-[10px] font-black text-slate-400 px-2 uppercase tracking-widest">
+                                    <span>報告序號：R-{selected.id.slice(-6).toUpperCase()}</span>
+                                    <span>列印日期：{new Date().toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <table className="w-full border-[3px] border-slate-900 text-left">
+                                <tbody>
+                                    <tr>
+                                        <td className="bg-slate-100 border-2 border-slate-900 p-5 font-black w-40 text-sm uppercase tracking-widest">課程名稱</td>
+                                        <td className="border-2 border-slate-900 p-5 font-bold text-lg" colSpan="3">{selected.courseName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="bg-slate-100 border-2 border-slate-900 p-5 font-black text-sm uppercase tracking-widest">實施年度</td>
+                                        <td className="border-2 border-slate-900 p-5 font-black w-1/3">{selected.year} 年度</td>
+                                        <td className="bg-slate-100 border-2 border-slate-900 p-5 font-black w-40 text-sm uppercase tracking-widest">參與委員</td>
+                                        <td className="border-2 border-slate-900 p-5 font-black">{currentScores.length} 位委員</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                    <span className="bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs">A</span> 
+                                    評分彙整表
+                                </h3>
+                                <table className="w-full border-collapse border-2 border-slate-900 text-center">
+                                    <thead className="bg-slate-100 text-sm">
+                                        <tr>
+                                            <th className="border-2 border-slate-900 p-4 font-black">評分委員</th>
+                                            {selected.instructors.map((ins, idx) => (
+                                                <th key={idx} className="border-2 border-slate-900 p-4 font-black">
+                                                    {ins.name} ({ins.type==='internal'?'內':'外'})
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentScores.map((s, idx) => (
+                                            <tr key={idx} className="text-sm">
+                                                <td className="border border-slate-300 p-4 font-bold bg-slate-50/50">{s.evaluatorName}</td>
+                                                {s.instructorScores.map((insS, jIdx) => {
+                                                    const total = insS.itemScores.reduce((acc, score, kIdx) => acc + (score * selected.scoringItems[kIdx].weight) / 100, 0);
+                                                    return <td key={jIdx} className="border border-slate-300 p-4 font-mono font-bold">{total.toFixed(1)}</td>;
+                                                })}
+                                            </tr>
+                                        ))}
+                                        <tr className="bg-indigo-50 font-black text-indigo-900">
+                                            <td className="border-2 border-slate-900 p-5 text-sm uppercase tracking-widest">平均得分</td>
+                                            {selected.instructors.map((_, idx) => (
+                                                <td key={idx} className="border-2 border-slate-900 p-5 text-3xl italic">{calculateAvg(idx)}</td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                    <span className="bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs">B</span> 
+                                    委員綜合審核意見
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {selected.instructors.map((ins, idx) => (
+                                        <div key={idx} className="border-2 border-slate-900 p-6 rounded-2xl bg-white shadow-[8px_8px_0px_rgba(0,0,0,0.05)]">
+                                            <div className="font-black text-indigo-600 border-b-2 border-indigo-100 pb-3 mb-4 flex items-center gap-2">
+                                                <Icon name="Users" size={16} /> {ins.name} 講師
+                                            </div>
+                                            <ul className="space-y-4">
+                                                {currentScores.map((s, sIdx) => (
+                                                    s.instructorScores[idx].comment && (
+                                                        <li key={sIdx} className="text-sm text-slate-600 leading-relaxed font-bold border-l-4 border-slate-200 pl-4">
+                                                            「{s.instructorScores[idx].comment}」<br/>
+                                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">— {s.evaluatorName} 委員</span>
+                                                        </li>
+                                                    )
+                                                ))}
+                                                {!currentScores.some(s=>s.instructorScores[idx].comment) && <li className="text-xs text-slate-300 font-bold italic">尚無評語紀錄</li>}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="pt-24 grid grid-cols-3 gap-12 text-center font-black text-sm uppercase tracking-[0.2em]">
+                                <div className="space-y-16">
+                                    <div>承辦人簽章</div>
+                                    <div className="border-b-[3px] border-slate-900 w-full"></div>
+                                </div>
+                                <div className="space-y-16">
+                                    <div>單位主管簽章</div>
+                                    <div className="border-b-[3px] border-slate-900 w-full"></div>
+                                </div>
+                                <div className="space-y-16">
+                                    <div>機關核定簽章</div>
+                                    <div className="border-b-[3px] border-slate-900 w-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="grid grid-cols-1 gap-6">
+                    {forms.map(f => (
+                        <button key={f.id} onClick={()=>setSelected(f)} className="w-full bg-white p-8 rounded-[2rem] border-2 border-slate-50 flex justify-between items-center hover:bg-indigo-50 hover:border-indigo-100 transition-all shadow-sm group">
+                            <div className="text-left">
+                                <h4 className="font-black text-slate-800 text-2xl group-hover:text-indigo-700 transition-colors tracking-tighter">{f.courseName}</h4>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{f.year} 年度專案</span>
+                                    <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">已蒐集評分：{scores.filter(s=>s.formId===f.id).length} 份</span>
+                                </div>
+                            </div>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm group-hover:scale-110 transition-all text-indigo-600 border border-slate-100">
+                                <Icon name="ChevronRight" size={24} />
+                            </div>
+                        </button>
+                    ))}
+                    {forms.length === 0 && <div className="text-center py-20 text-slate-300 font-black italic">尚無遴選報告資料</div>}
+                </div>
+            );
+        };
+
+        // 統計視圖
+        const StatsView = ({ forms, scores, Icon }) => {
+            const getAvg = (type) => {
+                let sum = 0, count = 0;
+                forms.forEach(f => {
+                    const fScores = scores.filter(s => s.formId === f.id);
+                    f.instructors.forEach((ins, idx) => {
+                        if (ins.type === type && fScores.length > 0) {
+                            const instructorAvg = fScores.reduce((acc, s) => {
+                                const insS = s.instructorScores[idx];
+                                return acc + insS.itemScores.reduce((itemAcc, val, itemIdx) => itemAcc + (val * f.scoringItems[itemIdx].weight) / 100, 0);
+                            }, 0) / fScores.length;
+                            sum += instructorAvg; count++;
+                        }
+                    });
+                });
+                return count > 0 ? (sum / count).toFixed(1) : 0;
+            };
+
+            const intAvg = getAvg('internal');
+            const extAvg = getAvg('external');
+
+            return (
+                <div className="space-y-10 animate-in fade-in duration-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="bg-white p-12 rounded-[2.5rem] border-2 border-slate-50 shadow-sm text-center group hover:border-indigo-200 transition-all">
+                            <div className="text-indigo-600 text-[6rem] font-black leading-none mb-4 tracking-tighter transition-all group-hover:scale-105 italic">{intAvg}</div>
+                            <div className="text-slate-400 text-xs font-black uppercase tracking-[0.3em]">內部講師年度平均得分</div>
+                            <div className="mt-8 h-3 bg-slate-50 rounded-full overflow-hidden w-full mx-auto border border-slate-100">
+                                <div className="h-full bg-indigo-500 transition-all duration-[1.5s]" style={{width: `${intAvg}%`}}></div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-12 rounded-[2.5rem] border-2 border-slate-50 shadow-sm text-center group hover:border-amber-200 transition-all">
+                            <div className="text-amber-600 text-[6rem] font-black leading-none mb-4 tracking-tighter transition-all group-hover:scale-105 italic">{extAvg}</div>
+                            <div className="text-slate-400 text-xs font-black uppercase tracking-[0.3em]">外聘講師年度平均得分</div>
+                            <div className="mt-8 h-3 bg-slate-50 rounded-full overflow-hidden w-full mx-auto border border-slate-100">
+                                <div className="h-full bg-amber-500 transition-all duration-[1.5s]" style={{width: `${extAvg}%`}}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-10 rounded-[2rem] border border-slate-200">
+                        <h4 className="font-black text-slate-800 text-xl mb-8 flex items-center gap-3">
+                            <Icon name="BarChart2" size={24} className="text-indigo-600"/> 講師遴選明細排名
+                        </h4>
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-sm text-left">
+                                <thead>
+                                    <tr className="bg-slate-50 border-y-2 border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                        <th className="p-5">課程名稱</th>
+                                        <th className="p-5">講師姓名</th>
+                                        <th className="p-5">聘用類型</th>
+                                        <th className="p-5 text-center">平均得分</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-bold">
+                                    {forms.flatMap(f => f.instructors.map((ins, idx) => {
+                                        const fScores = scores.filter(s => s.formId === f.id);
+                                        const avg = fScores.length > 0 
+                                            ? (fScores.reduce((acc, s) => {
+                                                    const insS = s.instructorScores[idx];
+                                                    return acc + insS.itemScores.reduce((itemAcc, val, iIdx) => itemAcc + (val * f.scoringItems[iIdx].weight) / 100, 0);
+                                                }, 0) / fScores.length).toFixed(1)
+                                            : 'N/A';
+                                        return (
+                                            <tr key={`${f.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="p-5 text-slate-400 text-xs">{f.courseName}</td>
+                                                <td className="p-5 text-slate-800 font-black">{ins.name}</td>
+                                                <td className="p-5">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${ins.type==='internal'?'bg-blue-100 text-blue-700':'bg-amber-100 text-amber-700'}`}>
+                                                        {ins.type==='internal'?'內部':'外聘'}
+                                                    </span>
+                                                </td>
+                                                <td className="p-5 text-center">
+                                                    <div className={`inline-block px-5 py-1.5 rounded-xl font-black italic ${avg >= 85 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
+                                                        {avg}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
