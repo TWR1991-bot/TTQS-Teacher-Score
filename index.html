@@ -55,7 +55,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         
         // --- 配置區 ---
         const API_URL = "https://script.google.com/macros/s/AKfycbyejinkW2h7FjCl7A7Yqv8oJB-lS7uIJJzhKjEvP3iZXzor7BxuHRFa2WMYwRGzgJVrfw/exec";
@@ -86,6 +86,9 @@
             const [loading, setLoading] = useState(false);
             const [errorMsg, setErrorMsg] = useState(null);
             
+            // 全局年度切換狀態，預設為今年
+            const [globalYear, setGlobalYear] = useState(new Date().getFullYear().toString());
+            
             const [evaluators, setEvaluators] = useState([]);
             const [forms, setForms] = useState([]);
             const [scores, setScores] = useState([]);
@@ -109,6 +112,13 @@
             };
 
             useEffect(() => { fetchData(); }, []);
+
+            // 取得現有資料中的所有年份，並合併目前年份
+            const availableYears = useMemo(() => {
+                const yearsFromData = forms.map(f => f.year);
+                const uniqueYears = [...new Set([...yearsFromData, new Date().getFullYear().toString()])];
+                return uniqueYears.sort((a, b) => parseInt(b) - parseInt(a)); // 降序排列
+            }, [forms]);
 
             const apiCall = async (sheet, action, data) => {
                 setLoading(true);
@@ -152,6 +162,20 @@
                             <h1 className="text-xl font-black tracking-tight">師資遴選管理系統</h1>
                         </div>
                         <div className="flex items-center gap-4">
+                            {/* 年度切換選單 */}
+                            <div className="flex items-center gap-2 bg-indigo-900 px-3 py-1 rounded-xl border border-indigo-700">
+                                <span className="text-xs font-black opacity-60">年度查詢:</span>
+                                <select 
+                                    className="bg-transparent text-sm font-black outline-none cursor-pointer"
+                                    value={globalYear}
+                                    onChange={(e) => setGlobalYear(e.target.value)}
+                                >
+                                    {availableYears.map(y => (
+                                        <option key={y} value={y} className="text-slate-900">{y} 年度</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <span className="text-sm font-bold bg-indigo-900 px-3 py-1 rounded-full border border-indigo-500 flex items-center gap-2">
                                 {loading && <div className="loader"></div>}
                                 {adminLoggedIn ? "管理員" : `委員: ${selectedEvaluator?.name}`}
@@ -172,12 +196,12 @@
                                     <TabBtn active={adminSubTab==='stats'} onClick={()=>setAdminSubTab('stats')} icon="BarChart2" label="分數統計" Icon={Icon} />
                                 </div>
                                 {adminSubTab === 'evaluators' && <EvaluatorManager evaluators={evaluators} onApi={apiCall} Icon={Icon} />}
-                                {adminSubTab === 'forms' && <FormManager forms={forms} onApi={apiCall} Icon={Icon} />}
-                                {adminSubTab === 'reports' && <ReportManager forms={forms} scores={scores} onApi={apiCall} Icon={Icon} />}
-                                {adminSubTab === 'stats' && <StatsView forms={forms} scores={scores} Icon={Icon} />}
+                                {adminSubTab === 'forms' && <FormManager forms={forms} onApi={apiCall} Icon={Icon} selectedYear={globalYear} />}
+                                {adminSubTab === 'reports' && <ReportManager forms={forms} scores={scores} onApi={apiCall} Icon={Icon} selectedYear={globalYear} />}
+                                {adminSubTab === 'stats' && <StatsView forms={forms} scores={scores} Icon={Icon} selectedYear={globalYear} />}
                             </div>
                         ) : (
-                            <EvaluatorScoringView evaluator={selectedEvaluator} forms={forms} scores={scores} onApi={apiCall} Icon={Icon} />
+                            <EvaluatorScoringView evaluator={selectedEvaluator} forms={forms} scores={scores} onApi={apiCall} Icon={Icon} selectedYear={globalYear} />
                         )}
                     </main>
                 </div>
@@ -255,15 +279,22 @@
             );
         };
 
-        // 2. 遴選表管理
-        const FormManager = ({ forms, onApi, Icon }) => {
+        // 2. 遴選表管理 (新增選定年度過濾)
+        const FormManager = ({ forms, onApi, Icon, selectedYear }) => {
             const [isEditing, setIsEditing] = useState(false);
             const [formData, setFormData] = useState({
-                id: null, courseName: '', year: new Date().getFullYear().toString(), 
+                id: null, courseName: '', year: selectedYear, 
                 instructors: [{name: '', type: 'internal'}],
                 scoringItems: [{label: '教學能力', weight: 40}, {label: '專業知識', weight: 40}, {label: '學員互動', weight: 20}],
                 status: 'active'
             });
+
+            // 當切換全局年度時，更新新增表單的預設年度
+            useEffect(() => {
+                if (!formData.id) {
+                    setFormData(prev => ({ ...prev, year: selectedYear }));
+                }
+            }, [selectedYear]);
 
             const handleSave = (e) => {
                 e.preventDefault();
@@ -276,12 +307,14 @@
                 resetForm();
             };
 
-            const resetForm = () => setFormData({ id: null, courseName: '', year: new Date().getFullYear().toString(), instructors: [{name: '', type: 'internal'}], scoringItems: [{label: '教學能力', weight: 40}, {label: '專業知識', weight: 40}, {label: '學員互動', weight: 20}], status: 'active' });
+            const resetForm = () => setFormData({ id: null, courseName: '', year: selectedYear, instructors: [{name: '', type: 'internal'}], scoringItems: [{label: '教學能力', weight: 40}, {label: '專業知識', weight: 40}, {label: '學員互動', weight: 20}], status: 'active' });
+
+            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
 
             return (
                 <div className="space-y-6">
                     <div className="flex justify-between items-center font-black">
-                        <h3 className="text-2xl">遴選專案專區</h3>
+                        <h3 className="text-2xl">{selectedYear} 年度遴選專案</h3>
                         {!isEditing && <button onClick={()=>setIsEditing(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl hover:bg-indigo-700 transition-all">+ 建立新專案</button>}
                     </div>
 
@@ -297,7 +330,7 @@
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {formData.instructors.map((ins, i) => (
                                         <div key={i} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl">
-                                            <input required placeholder="講師姓名" className="flex-1 p-3 border rounded-lg outline-none" value={ins.name} onChange={e => { const copy = [...formData.instructors]; copy[i].name = e.target.value; setFormData({...formData, instructors: copy}); }} />
+                                            <input required placeholder="講師姓名" className="flex-1 p-2 border rounded-lg outline-none" value={ins.name} onChange={e => { const copy = [...formData.instructors]; copy[i].name = e.target.value; setFormData({...formData, instructors: copy}); }} />
                                             <select className="p-2 border rounded-lg outline-none" value={ins.type} onChange={e => { const copy = [...formData.instructors]; copy[i].type = e.target.value; setFormData({...formData, instructors: copy}); }}>
                                                 <option value="internal">內部</option><option value="external">外聘</option>
                                             </select>
@@ -326,7 +359,7 @@
                     )}
 
                     <div className="grid md:grid-cols-3 gap-6">
-                        {forms.map(form => (
+                        {filteredForms.map(form => (
                             <div key={form.id} className="bg-white p-6 rounded-[2rem] border shadow-sm group hover:border-indigo-300 transition-all duration-300">
                                 <div className="flex justify-between mb-4">
                                     <span className="bg-indigo-50 text-indigo-600 text-[10px] px-2 py-1 rounded-full font-bold">{form.year}</span>
@@ -345,13 +378,16 @@
                                 </div>
                             </div>
                         ))}
+                        {filteredForms.length === 0 && !isEditing && (
+                            <div className="col-span-full py-20 text-center text-slate-300 italic border-2 border-dashed rounded-[2rem]">此年度尚無遴選專案</div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        // 3. 評分系統 (優化: 分數鎖定 100)
-        const EvaluatorScoringView = ({ evaluator, forms, scores, onApi, Icon }) => {
+        // 3. 評分系統 (新增年度過濾)
+        const EvaluatorScoringView = ({ evaluator, forms, scores, onApi, Icon, selectedYear }) => {
             const [selectedForm, setSelectedForm] = useState(null);
             const [localScore, setLocalScore] = useState(null);
 
@@ -372,6 +408,8 @@
                 copy.instructorScores[insIdx].itemScores[itemIdx] = num;
                 setLocalScore(copy);
             };
+
+            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
 
             if (selectedForm) return (
                 <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in duration-500">
@@ -417,27 +455,29 @@
 
             return (
                 <div className="space-y-12 animate-in fade-in duration-500">
-                    <h2 className="text-4xl font-black italic tracking-tight text-slate-800">您好，{evaluator.name} 委員</h2>
+                    <h2 className="text-4xl font-black italic tracking-tight text-slate-800">您好，{evaluator.name} 委員 ({selectedYear} 年度)</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {forms.map(f => (
+                        {filteredForms.map(f => (
                             <div key={f.id} className="bg-white p-8 rounded-[2rem] border shadow-sm relative flex flex-col justify-between h-56 hover:shadow-lg hover:border-indigo-100 transition-all group">
                                 {scores.some(s => s.formId === f.id && s.evaluatorId === evaluator.id) && <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-4 py-2 rounded-bl-2xl font-black shadow-sm">已完成評分</div>}
                                 <h4 className="text-2xl font-black leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">{f.courseName}</h4>
                                 <button onClick={()=>start(f)} className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-lg hover:bg-indigo-700 transition-all active:scale-95">點擊進入評分</button>
                             </div>
                         ))}
+                        {filteredForms.length === 0 && (
+                            <div className="col-span-full py-20 text-center text-slate-300 italic">此年度尚無待評分專案</div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        // 4. 遴選報告 (優化: 詳細分數清單、A4 版面配置與儲存功能)
-        const ReportManager = ({ forms, scores, onApi, Icon }) => {
+        // 4. 遴選報告 (新增過濾)
+        const ReportManager = ({ forms, scores, onApi, Icon, selectedYear }) => {
             const [selected, setSelected] = useState(null);
             const [reviewText, setReviewText] = useState("");
             const currentScores = scores.filter(s => s.formId === selected?.id);
 
-            // 初始化審查結果
             useEffect(() => {
                 if (selected) {
                     setReviewText(selected.reviewResult || "");
@@ -463,6 +503,8 @@
                 onApi('forms', 'update', { ...selected, reviewResult: reviewText });
                 alert("審查結果已成功儲存至雲端");
             };
+
+            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
 
             if (selected) return (
                 <div className="report-container bg-white p-6 md:p-10 rounded-[1rem] border shadow-sm text-slate-900 font-black animate-in zoom-in-95 duration-500">
@@ -586,7 +628,7 @@
 
             return (
                 <div className="space-y-6 animate-in fade-in duration-500">
-                    {forms.map(f => (
+                    {filteredForms.map(f => (
                         <button key={f.id} onClick={()=>setSelected(f)} className="w-full bg-white p-6 rounded-[2rem] border-2 border-transparent flex justify-between items-center group transition-all hover:border-indigo-500 hover:shadow-xl hover:bg-white shadow-sm">
                             <div className="text-left font-black">
                                 <h4 className="text-xl text-slate-800 group-hover:text-indigo-600 transition-colors">{f.courseName}</h4>
@@ -599,18 +641,24 @@
                             </div>
                         </button>
                     ))}
+                    {filteredForms.length === 0 && (
+                        <div className="py-20 text-center text-slate-300 italic border-2 border-dashed rounded-[2rem]">此年度尚無遴選報告</div>
+                    )}
                 </div>
             );
         };
 
-        // 5. 分數統計 (重構: 分為兩個頁籤，彙整所有課程平均)
-        const StatsView = ({ forms, scores, Icon }) => {
+        // 5. 分數統計 (彙整當前年度平均)
+        const StatsView = ({ forms, scores, Icon, selectedYear }) => {
             const [statsTab, setStatsTab] = useState('internal');
 
             const getAggregatedStats = () => {
                 const instructorMap = new Map();
+                
+                // 僅過濾當前選定年度的專案
+                const yearlyForms = forms.filter(f => f.year === selectedYear);
 
-                forms.forEach(f => {
+                yearlyForms.forEach(f => {
                     const fScores = scores.filter(s => s.formId === f.id);
                     if (fScores.length === 0) return;
 
@@ -621,19 +669,19 @@
                                 type: ins.type,
                                 itemAverages: {}, // 存儲各項目標籤的平均分
                                 totalWeightedScore: 0,
-                                participationCount: 0
+                                totalEvaluationsCount: 0
                             });
                         }
 
                         const data = instructorMap.get(ins.name);
-                        data.participationCount++;
 
                         // 彙整此課程的所有評分
                         fScores.forEach(s => {
                             const insScore = s.instructorScores[insIdx];
+                            data.totalEvaluationsCount++;
                             
                             // 計算各個項目的分數
-                            selectedFormScoringItems(f).forEach((item, itemIdx) => {
+                            (f.scoringItems || []).forEach((item, itemIdx) => {
                                 const label = item.label;
                                 const rawScore = insScore.itemScores[itemIdx];
                                 
@@ -655,11 +703,6 @@
 
                 // 計算平均值
                 const finalResults = Array.from(instructorMap.values()).map(d => {
-                    const totalEvaluations = scores.filter(s => {
-                        const form = forms.find(f => f.id === s.formId);
-                        return form && form.instructors.some(i => i.name === d.name);
-                    }).length;
-
                     const itemStats = {};
                     Object.keys(d.itemAverages).forEach(label => {
                         itemStats[label] = (d.itemAverages[label].sum / d.itemAverages[label].count).toFixed(1);
@@ -669,14 +712,12 @@
                         name: d.name,
                         type: d.type,
                         itemStats,
-                        avg: (d.totalWeightedScore / totalEvaluations).toFixed(1)
+                        avg: (d.totalWeightedScore / d.totalEvaluationsCount).toFixed(1)
                     };
                 });
 
                 return finalResults.sort((a, b) => b.avg - a.avg);
             };
-
-            const selectedFormScoringItems = (form) => form.scoringItems || [];
             
             const allAggregatedStats = getAggregatedStats();
             const filteredStats = allAggregatedStats.filter(s => s.type === statsTab);
@@ -705,7 +746,7 @@
                     <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm overflow-hidden">
                         <div className="flex items-center gap-3 mb-8 border-b pb-4">
                             <Icon name="BarChart2" className={statsTab === 'internal' ? "text-indigo-600" : "text-amber-600"}/>
-                            <h3 className="text-2xl font-black">{statsTab === 'internal' ? '內部' : '外聘'}講師表現排行榜 (跨課程彙整)</h3>
+                            <h3 className="text-2xl font-black">{selectedYear} 年度 {statsTab === 'internal' ? '內部' : '外聘'}講師表現排行榜</h3>
                         </div>
                         
                         <div className="overflow-x-auto custom-scrollbar">
@@ -715,7 +756,7 @@
                                         <th className="p-5">排名</th>
                                         <th className="p-5">講師姓名</th>
                                         {allItemLabels.map(label => (
-                                            <th key={label} className="p-5 text-center">{label}<br/><span className="text-[9px] opacity-60">(平均)</span></th>
+                                            <th key={label} className="p-5 text-center">{label}<br/><span className="text-[9px] opacity-60">(年度平均)</span></th>
                                         ))}
                                         <th className="p-5 text-center bg-indigo-50/50">加權總平均</th>
                                     </tr>
@@ -735,7 +776,7 @@
                                             </td>
                                         </tr>
                                     ))}
-                                    {filteredStats.length === 0 && <tr><td colSpan={allItemLabels.length + 3} className="p-10 text-center text-slate-300 italic">尚無相關統計數據</td></tr>}
+                                    {filteredStats.length === 0 && <tr><td colSpan={allItemLabels.length + 3} className="p-10 text-center text-slate-300 italic">此年度尚無相關統計數據</td></tr>}
                                 </tbody>
                             </table>
                         </div>
@@ -743,7 +784,7 @@
 
                     <div className="grid grid-cols-2 gap-10 no-print">
                         <div className="bg-white p-10 rounded-[2rem] border text-center">
-                            <div className="text-slate-400 font-black text-sm uppercase mb-2">當前分類講師總平均</div>
+                            <div className="text-slate-400 font-black text-sm uppercase mb-2">{selectedYear} 年度分類總平均</div>
                             <div className={`text-6xl font-black italic ${statsTab === 'internal' ? 'text-indigo-600' : 'text-amber-600'}`}>
                                 {(filteredStats.reduce((acc, cur) => acc + parseFloat(cur.avg), 0) / (filteredStats.length || 1)).toFixed(1)}
                             </div>
