@@ -64,7 +64,6 @@
         
         // --- 配置區 ---
         const API_URL = "https://script.google.com/macros/s/AKfycbyejinkW2h7FjCl7A7Yqv8oJB-lS7uIJJzhKjEvP3iZXzor7BxuHRFa2WMYwRGzgJVrfw/exec";
-        // 更新為新的 LOGO 網址
         const LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRRuJ4_TvLMI64SmmVvQNjU0uWaZMwrcz3xw&s";
 
         const Icon = ({ name, size = 20, className = "" }) => {
@@ -134,7 +133,7 @@
                     });
                     await fetchData(); 
                 } catch (err) {
-                    alert("同步失敗，請檢查網路連線。");
+                    alert("同步失敗，請檢查網路。");
                 } finally {
                     setLoading(false);
                 }
@@ -146,7 +145,7 @@
                 if (pwd === '76380260') {
                     setAdminLoggedIn(true);
                     setView('admin_dashboard');
-                } else { alert("登入密碼錯誤"); }
+                } else { alert("密碼錯誤"); }
             };
 
             const logout = () => {
@@ -160,7 +159,7 @@
             if (view === 'login') return <LoginView evaluators={evaluators} onAdminLogin={handleAdminLogin} onEvalLogin={(id)=>{setSelectedEvaluator(evaluators.find(e=>e.id===id)); setView('evaluator_dashboard');}} loading={loading} errorMsg={errorMsg} Icon={Icon} LOGO_URL={LOGO_URL} />;
 
             return (
-                <div className="min-h-screen text-slate-900">
+                <div className="min-h-screen text-slate-900 font-black">
                     <nav className="bg-indigo-800 text-white p-4 shadow-lg flex justify-between items-center no-print">
                         <div className="flex items-center gap-3">
                             <div className="bg-white rounded-lg p-1 shadow-inner flex items-center justify-center w-10 h-10 overflow-hidden">
@@ -215,30 +214,30 @@
         };
 
         const LoginView = ({ evaluators, onAdminLogin, onEvalLogin, loading, errorMsg, Icon, LOGO_URL }) => (
-            <div className="min-h-screen flex items-center justify-center bg-indigo-900 p-4 font-black">
+            <div className="min-h-screen flex items-center justify-center bg-indigo-900 p-4 font-black text-slate-900">
                 <div className="bg-white rounded-[2rem] shadow-2xl p-10 w-full max-w-md animate-in fade-in duration-500">
                     <div className="text-center mb-10">
                         <div className="bg-white w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl overflow-hidden border border-slate-100 p-2">
                             <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
                         </div>
-                        <h2 className="text-3xl text-slate-800 tracking-tight">教育訓練講師遴選系統</h2>
+                        <h2 className="text-3xl font-black tracking-tight">教育訓練講師遴選系統</h2>
                     </div>
-                    {errorMsg && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-xs">{errorMsg}</div>}
+                    {errorMsg && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-xs font-black">{errorMsg}</div>}
                     <div className="space-y-8">
                         <form onSubmit={onAdminLogin} className="space-y-4">
-                            <h3 className="text-xs text-slate-400 uppercase tracking-widest">管理員入口</h3>
-                            <input type="password" name="password" placeholder="輸入管理密碼" className="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <button className="w-full bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-700 transition-colors">登入管理端</button>
+                            <h3 className="text-xs text-slate-400 uppercase tracking-widest font-black">管理員入口</h3>
+                            <input type="password" name="password" placeholder="輸入管理密碼" className="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500 font-black" />
+                            <button className="w-full bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-700 transition-colors font-black">登入管理端</button>
                         </form>
                         <div className="space-y-4">
-                            <h3 className="text-xs text-slate-400 uppercase tracking-widest">評分委員入口</h3>
+                            <h3 className="text-xs text-slate-400 uppercase tracking-widest font-black">評分委員入口</h3>
                             <div className="grid gap-3 max-h-48 overflow-y-auto custom-scrollbar">
                                 {evaluators.map(ev => (
-                                    <button key={ev.id} onClick={()=>onEvalLogin(ev.id)} className="p-4 border rounded-2xl hover:bg-indigo-50 flex justify-between items-center transition-colors">
+                                    <button key={ev.id} onClick={()=>onEvalLogin(ev.id)} className="p-4 border rounded-2xl hover:bg-indigo-50 flex justify-between items-center transition-colors font-black">
                                         <span>{ev.name}</span> <Icon name="ChevronRight" />
                                     </button>
                                 ))}
-                                {evaluators.length === 0 && <p className="text-slate-300 text-center py-4 italic font-normal">讀取中或暫無資料</p>}
+                                {evaluators.length === 0 && <p className="text-slate-300 text-center py-4 italic font-black">讀取中或暫無資料</p>}
                             </div>
                         </div>
                     </div>
@@ -256,8 +255,8 @@
             const [editing, setEditing] = useState(false);
             const [formData, setFormData] = useState({ name: '', title: '' });
             return (
-                <div className="bg-white rounded-3xl shadow-sm border overflow-hidden">
-                    <div className="p-6 border-b flex justify-between items-center font-black">
+                <div className="bg-white rounded-3xl shadow-sm border overflow-hidden font-black">
+                    <div className="p-6 border-b flex justify-between items-center">
                         <h3>評分委員清單</h3>
                         {!editing && <button onClick={()=>setEditing(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">+ 新增委員</button>}
                     </div>
@@ -265,17 +264,17 @@
                         <form onSubmit={(e)=>{e.preventDefault(); onApi('evaluators', 'add', {...formData, id: Date.now().toString()}); setEditing(false); setFormData({name:'', title:''});}} className="p-6 bg-slate-50 flex gap-4 animate-in slide-in-from-top duration-300">
                             <input required value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} className="p-3 border rounded-xl flex-1 outline-none" placeholder="姓名"/>
                             <input required value={formData.title} onChange={e=>setFormData({...formData, title:e.target.value})} className="p-3 border rounded-xl flex-1 outline-none" placeholder="職稱"/>
-                            <button className="bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700">儲存</button>
-                            <button type="button" onClick={()=>setEditing(false)} className="bg-slate-300 px-6 py-2 rounded-xl hover:bg-slate-400">取消</button>
+                            <button className="bg-green-600 text-white px-6 py-2 rounded-xl">儲存</button>
+                            <button type="button" onClick={()=>setEditing(false)} className="bg-slate-300 px-6 py-2 rounded-xl">取消</button>
                         </form>
                     )}
-                    <table className="w-full text-left font-bold">
+                    <table className="w-full text-left">
                         <thead className="bg-slate-50 text-xs border-b"><tr><th className="p-4 px-8">姓名</th><th className="p-4">職稱</th><th className="p-4 text-right px-8">操作</th></tr></thead>
                         <tbody>
                             {evaluators.map(ev => (
-                                <tr key={ev.id} className="border-b hover:bg-slate-50 transition-colors">
+                                <tr key={ev.id} className="border-b hover:bg-slate-50">
                                     <td className="p-4 px-8">{ev.name}</td><td>{ev.title}</td>
-                                    <td className="p-4 text-right px-8"><button onClick={()=>confirm('確定刪除此人員？') && onApi('evaluators', 'delete', ev)} className="text-red-400 hover:text-red-600"><Icon name="Trash2" size={18}/></button></td>
+                                    <td className="p-4 text-right px-8"><button onClick={()=>confirm('確定刪除？') && onApi('evaluators', 'delete', ev)} className="text-red-400 hover:text-red-600"><Icon name="Trash2" size={18}/></button></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -294,73 +293,61 @@
             });
 
             useEffect(() => {
-                if (!formData.id) {
-                    setFormData(prev => ({ ...prev, year: selectedYear }));
-                }
+                if (!formData.id) setFormData(prev => ({ ...prev, year: selectedYear }));
             }, [selectedYear]);
 
             const handleSave = (e) => {
                 e.preventDefault();
-                const totalWeight = formData.scoringItems.reduce((acc, cur) => acc + parseInt(cur.weight || 0), 0);
-                if (totalWeight !== 100) return alert("評分加權總計必須為 100%");
-                const action = formData.id ? 'update' : 'add';
-                const finalData = formData.id ? formData : { ...formData, id: Date.now().toString() };
-                onApi('forms', action, finalData);
-                setIsEditing(false);
-                resetForm();
+                if (formData.scoringItems.reduce((acc, cur) => acc + parseInt(cur.weight || 0), 0) !== 100) return alert("加權須為 100%");
+                onApi('forms', formData.id ? 'update' : 'add', formData.id ? formData : { ...formData, id: Date.now().toString() });
+                setIsEditing(false); resetForm();
             };
 
             const resetForm = () => setFormData({ id: null, courseName: '', year: selectedYear, instructors: [{name: '', type: 'internal'}], scoringItems: [{label: '教學能力', weight: 40}, {label: '專業知識', weight: 40}, {label: '學員互動', weight: 20}], status: 'active' });
 
-            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
-
             return (
-                <div className="space-y-6">
+                <div className="space-y-6 font-black">
                     <div className="flex justify-between items-center font-black">
                         <h3 className="text-2xl">{selectedYear} 年度遴選專案</h3>
-                        {!isEditing && <button onClick={()=>setIsEditing(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl hover:bg-indigo-700 transition-all">+ 建立新專案</button>}
+                        {!isEditing && <button onClick={()=>setIsEditing(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl">+ 建立新專案</button>}
                     </div>
-
                     {isEditing && (
-                        <form onSubmit={handleSave} className="bg-white p-8 rounded-[2rem] border-2 border-indigo-50 space-y-8 animate-in fade-in duration-300">
+                        <form onSubmit={handleSave} className="bg-white p-8 rounded-[2rem] border-2 border-indigo-50 space-y-8 shadow-sm">
                             <div className="grid grid-cols-2 gap-6">
-                                <div><label className="text-xs font-bold text-slate-400">課程名稱</label><input required className="w-full p-4 border rounded-2xl bg-slate-50 mt-1 font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={formData.courseName} onChange={e=>setFormData({...formData, courseName: e.target.value})} /></div>
-                                <div><label className="text-xs font-bold text-slate-400">年度</label><input required className="w-full p-4 border rounded-2xl bg-slate-50 mt-1 font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={formData.year} onChange={e=>setFormData({...formData, year: e.target.value})} /></div>
+                                <div><label className="text-xs text-slate-400">課程名稱</label><input required className="w-full p-4 border rounded-2xl bg-slate-50 font-black" value={formData.courseName} onChange={e=>setFormData({...formData, courseName: e.target.value})} /></div>
+                                <div><label className="text-xs text-slate-400">年度</label><input required className="w-full p-4 border rounded-2xl bg-slate-50 font-black" value={formData.year} onChange={e=>setFormData({...formData, year: e.target.value})} /></div>
                             </div>
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center border-b pb-2"><h4 className="font-bold">受評講師 (1~4位)</h4><button type="button" onClick={()=>formData.instructors.length < 4 && setFormData({...formData, instructors: [...formData.instructors, {name: '', type: 'internal'}]})} className="text-indigo-600 text-xs font-bold hover:underline">+ 新增</button></div>
+                                <div className="flex justify-between items-center border-b pb-2"><h4 className="font-bold">受評講師 (1~4位)</h4><button type="button" onClick={()=>formData.instructors.length < 4 && setFormData({...formData, instructors: [...formData.instructors, {name: '', type: 'internal'}]})} className="text-indigo-600 text-xs font-black">+ 新增</button></div>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {formData.instructors.map((ins, i) => (
                                         <div key={i} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl">
-                                            <input required placeholder="講師姓名" className="flex-1 p-2 border rounded-lg outline-none" value={ins.name} onChange={e => { const copy = [...formData.instructors]; copy[i].name = e.target.value; setFormData({...formData, instructors: copy}); }} />
-                                            <select className="p-2 border rounded-lg outline-none" value={ins.type} onChange={e => { const copy = [...formData.instructors]; copy[i].type = e.target.value; setFormData({...formData, instructors: copy}); }}>
-                                                <option value="internal">內部</option><option value="external">外聘</option>
-                                            </select>
-                                            {i > 0 && <button type="button" onClick={()=>{ const copy = formData.instructors.filter((_, idx)=>idx!==i); setFormData({...formData, instructors: copy}); }} className="text-red-400 p-1">×</button>}
+                                            <input required placeholder="講師姓名" className="flex-1 p-2 border rounded-lg font-black" value={ins.name} onChange={e => { const copy = [...formData.instructors]; copy[i].name = e.target.value; setFormData({...formData, instructors: copy}); }} />
+                                            <select className="p-2 border rounded-lg font-black" value={ins.type} onChange={e => { const copy = [...formData.instructors]; copy[i].type = e.target.value; setFormData({...formData, instructors: copy}); }}><option value="internal">內部</option><option value="external">外聘</option></select>
+                                            {i > 0 && <button type="button" onClick={()=>{ setFormData({...formData, instructors: formData.instructors.filter((_, idx)=>idx!==i)}); }} className="text-red-400">×</button>}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center border-b pb-2"><h4 className="font-bold">評分權重 (合計100%)</h4><button type="button" onClick={()=>setFormData({...formData, scoringItems: [...formData.scoringItems, {label: '', weight: 0}]})} className="text-indigo-600 text-xs font-bold hover:underline">+ 新增項目</button></div>
+                                <div className="flex justify-between items-center border-b pb-2"><h4 className="font-bold">評分權重 (合計100%)</h4><button type="button" onClick={()=>setFormData({...formData, scoringItems: [...formData.scoringItems, {label: '', weight: 0}]})} className="text-indigo-600 text-xs font-black">+ 新增項目</button></div>
                                 {formData.scoringItems.map((item, i) => (
                                     <div key={i} className="flex gap-4 items-center">
-                                        <input required placeholder="項目名稱" className="flex-1 p-3 border rounded-xl outline-none" value={item.label} onChange={e => { const copy = [...formData.scoringItems]; copy[i].label = e.target.value; setFormData({...formData, scoringItems: copy}); }} />
-                                        <div className="flex items-center gap-2"><input type="number" className="w-20 p-3 border rounded-xl text-center outline-none" value={item.weight} onChange={e => { const copy = [...formData.scoringItems]; copy[i].weight = e.target.value; setFormData({...formData, scoringItems: copy}); }} /> <span className="font-bold">%</span></div>
-                                        {i > 0 && <button type="button" onClick={()=>{ const copy = formData.scoringItems.filter((_, idx)=>idx!==i); setFormData({...formData, scoringItems: copy}); }} className="text-red-400">×</button>}
+                                        <input required placeholder="項目名稱" className="flex-1 p-3 border rounded-xl font-black" value={item.label} onChange={e => { const copy = [...formData.scoringItems]; copy[i].label = e.target.value; setFormData({...formData, scoringItems: copy}); }} />
+                                        <div className="flex items-center gap-2"><input type="number" className="w-20 p-3 border rounded-xl text-center font-black" value={item.weight} onChange={e => { const copy = [...formData.scoringItems]; copy[i].weight = e.target.value; setFormData({...formData, scoringItems: copy}); }} /> <span>%</span></div>
+                                        {i > 0 && <button type="button" onClick={()=>{ setFormData({...formData, scoringItems: formData.scoringItems.filter((_, idx)=>idx!==i)}); }} className="text-red-400">×</button>}
                                     </div>
                                 ))}
                             </div>
                             <div className="flex justify-end gap-3 pt-4 border-t">
-                                <button type="button" onClick={()=>{setIsEditing(false); resetForm();}} className="px-8 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold hover:bg-slate-200">取消</button>
-                                <button type="submit" className="px-10 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg hover:bg-indigo-700 transition-all">儲存專案</button>
+                                <button type="button" onClick={()=>{setIsEditing(false); resetForm();}} className="px-8 py-3 rounded-xl bg-slate-100 text-slate-500 font-black">取消</button>
+                                <button type="submit" className="px-10 py-3 rounded-xl bg-indigo-600 text-white font-black shadow-lg">儲存專案</button>
                             </div>
                         </form>
                     )}
-
                     <div className="grid md:grid-cols-3 gap-6">
-                        {filteredForms.map(form => (
-                            <div key={form.id} className="bg-white p-6 rounded-[2rem] border shadow-sm group hover:border-indigo-300 transition-all duration-300">
+                        {forms.filter(f => f.year === selectedYear).map(form => (
+                            <div key={form.id} className="bg-white p-6 rounded-[2rem] border shadow-sm group hover:border-indigo-300 transition-all">
                                 <div className="flex justify-between mb-4">
                                     <span className="bg-indigo-50 text-indigo-600 text-[10px] px-2 py-1 rounded-full font-bold">{form.year}</span>
                                     <div className="flex gap-2">
@@ -378,7 +365,6 @@
                                 </div>
                             </div>
                         ))}
-                        {filteredForms.length === 0 && !isEditing && <div className="col-span-full py-20 text-center text-slate-300 italic border-2 border-dashed rounded-[2rem]">此年度尚無遴選專案</div>}
                     </div>
                 </div>
             );
@@ -395,11 +381,11 @@
                     instructorScores: (form.instructors || []).map(() => ({ itemScores: (form.scoringItems || []).map(() => 0), comment: '' }))
                 });
             };
-            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
+            const filteredForms = forms.filter(f => f.year === selectedYear);
 
             if (selectedForm && localScore) return (
-                <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in duration-500">
-                    <button onClick={()=>setSelectedForm(null)} className="text-slate-400 font-black flex items-center gap-2 hover:text-slate-800">← 返回列表</button>
+                <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in duration-500 font-black">
+                    <button onClick={()=>setSelectedForm(null)} className="text-slate-400 font-black flex items-center gap-2 hover:text-slate-800 transition-colors">← 返回列表</button>
                     <div className="flex justify-between items-end">
                         <h2 className="text-3xl font-black">{selectedForm.courseName}</h2>
                         <div className="text-red-500 font-black text-sm bg-red-50 px-4 py-2 rounded-full border border-red-100 italic">★ 評分各項滿分為 100 分</div>
@@ -410,38 +396,39 @@
                             <h3 className="text-2xl font-black mb-6">{ins.name} ({ins.type==='internal'?'內部':'外聘'})</h3>
                             {(selectedForm.scoringItems || []).map((item, itemIdx) => (
                                 <div key={itemIdx} className="flex items-center gap-6 mb-4 font-bold border-b border-slate-50 pb-4">
-                                    <div className="flex-1"><div>{item.label}</div><div className="text-[10px] text-slate-400 uppercase tracking-widest">權重：{item.weight}%</div></div>
+                                    <div className="flex-1"><div>{item.label}</div><div className="text-[10px] text-slate-400 uppercase tracking-widest font-black">權重：{item.weight}%</div></div>
                                     <div className="flex items-center gap-3">
-                                        <input type="number" max="100" min="0" className="w-24 p-3 border rounded-2xl text-center bg-slate-50 font-black text-xl outline-none focus:ring-2 focus:ring-indigo-500" value={localScore.instructorScores[insIdx]?.itemScores[itemIdx] || 0} onChange={e => {
-                                            let num = Math.min(100, Math.max(0, parseInt(e.target.value || 0)));
-                                            const copy = { ...localScore };
-                                            if (copy.instructorScores[insIdx]) { copy.instructorScores[insIdx].itemScores[itemIdx] = num; setLocalScore(copy); }
-                                        }} />
+                                        <input type="number" max="100" min="0" className="w-24 p-3 border rounded-2xl text-center bg-slate-50 font-black text-xl outline-none focus:ring-2 focus:ring-indigo-500" value={localScore.instructorScores[insIdx]?.itemScores[itemIdx] || 0} 
+                                            onChange={e => {
+                                                let num = Math.min(100, Math.max(0, parseInt(e.target.value || 0)));
+                                                const copy = { ...localScore };
+                                                if (copy.instructorScores[insIdx]) { copy.instructorScores[insIdx].itemScores[itemIdx] = num; setLocalScore(copy); }
+                                            }} />
                                         <span className="text-slate-300">/ 100</span>
                                     </div>
                                 </div>
                             ))}
                             <div className="mt-6">
                                 <label className="block text-xs font-black text-slate-400 uppercase mb-2">委員評語與建議</label>
-                                <textarea className="w-full p-4 border rounded-2xl bg-slate-50 font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-h-[100px]" placeholder="請輸入評語..." value={localScore.instructorScores[insIdx]?.comment || ""} onChange={e=>{const copy={...localScore}; if(copy.instructorScores[insIdx]) { copy.instructorScores[insIdx].comment=e.target.value; setLocalScore(copy); }}} />
+                                <textarea className="w-full p-4 border rounded-2xl bg-slate-50 font-black outline-none focus:ring-2 focus:ring-indigo-100 min-h-[100px]" placeholder="請輸入對該講師的評語..." value={localScore.instructorScores[insIdx]?.comment || ""} onChange={e=>{const copy={...localScore}; if(copy.instructorScores[insIdx]) { copy.instructorScores[insIdx].comment=e.target.value; setLocalScore(copy); }}} />
                             </div>
                         </div>
                     ))}
                     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-50">
-                        <button onClick={()=>{onApi('scores', scores.some(s=>s.id===localScore.id)?'update':'add', localScore); setSelectedForm(null); alert("評分儲存成功");}} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-2xl hover:bg-indigo-700 transition-all active:scale-95">提交評分資料</button>
+                        <button onClick={()=>{onApi('scores', scores.some(s=>s.id===localScore.id)?'update':'add', localScore); setSelectedForm(null); alert("評分儲存成功");}} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-2xl hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">提交評分資料</button>
                     </div>
                 </div>
             );
 
             return (
-                <div className="space-y-12 animate-in fade-in duration-500">
+                <div className="space-y-12 font-black">
                     <h2 className="text-4xl font-black italic tracking-tight text-slate-800">您好，{evaluator.name} 委員 ({selectedYear} 年度)</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {filteredForms.map(f => (
                             <div key={f.id} className="bg-white p-8 rounded-[2rem] border shadow-sm relative flex flex-col justify-between h-56 hover:shadow-lg hover:border-indigo-100 transition-all group">
-                                {scores.some(s => s.formId === f.id && s.evaluatorId === evaluator.id) && <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-4 py-2 rounded-bl-2xl font-black">已完成評分</div>}
-                                <h4 className="text-2xl font-black leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">{f.courseName}</h4>
-                                <button onClick={()=>start(f)} className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-lg hover:bg-indigo-700 transition-all">進入評分</button>
+                                {scores.some(s => s.formId === f.id && s.evaluatorId === evaluator.id) && <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-4 py-2 rounded-bl-2xl font-black shadow-sm">已完成評分</div>}
+                                <h4 className="text-2xl font-black leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors font-black">{f.courseName}</h4>
+                                <button onClick={()=>start(f)} className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-lg hover:bg-indigo-700 transition-all active:scale-95 font-black">點擊進入評分</button>
                             </div>
                         ))}
                     </div>
@@ -452,9 +439,15 @@
         const ReportManager = ({ forms, scores, onApi, Icon, selectedYear }) => {
             const [selected, setSelected] = useState(null);
             const [reviewText, setReviewText] = useState("");
+            const [winner, setWinner] = useState("");
             const currentScores = scores.filter(s => s.formId === selected?.id);
-            useEffect(() => { if (selected) setReviewText(selected.reviewResult || ""); }, [selected]);
-            const filteredForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
+
+            useEffect(() => {
+                if (selected) {
+                    setReviewText(selected.reviewResult || "");
+                    setWinner(selected.selectedInstructor || "");
+                }
+            }, [selected]);
 
             const calculateAvg = (insIdx) => {
                 if (currentScores.length === 0) return 0;
@@ -472,79 +465,105 @@
             };
 
             if (selected) return (
-                <div className="report-container bg-white p-6 md:p-10 rounded-xl border shadow-sm animate-in zoom-in-95 duration-500">
+                <div className="report-container bg-white p-6 md:p-10 rounded-xl border shadow-sm animate-in zoom-in-95 duration-500 font-black">
                     <div className="flex justify-between items-center mb-8 no-print">
-                        <button onClick={()=>setSelected(null)} className="text-slate-400 font-black hover:text-slate-800">← 返回</button>
+                        <button onClick={()=>{setSelected(null); setReviewText("");}} className="text-slate-400 font-black hover:text-slate-800 transition-colors">← 返回列表</button>
                         <div className="flex gap-4">
-                            <button onClick={()=>{ onApi('forms', 'update', { ...selected, reviewResult: reviewText }); alert("儲存成功"); }} className="bg-green-600 text-white px-6 py-2 rounded-xl font-black shadow hover:bg-green-700 flex items-center gap-2 transition-all"><Icon name="Save" size={18}/> 儲存審查結果</button>
-                            <button onClick={()=>window.print()} className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-black shadow hover:bg-indigo-700 flex items-center gap-2 transition-all"><Icon name="Printer" size={18}/> 列印報告</button>
+                            <button onClick={()=>{ onApi('forms', 'update', { ...selected, reviewResult: reviewText, selectedInstructor: winner }); alert("審查結果已成功儲存"); }} className="bg-green-600 text-white px-6 py-2 rounded-xl font-black shadow hover:bg-green-700 transition-all flex items-center gap-2"><Icon name="Save" size={18}/> 儲存審查結果</button>
+                            <button onClick={()=>window.print()} className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-black shadow hover:bg-indigo-700 transition-all flex items-center gap-2"><Icon name="Printer" size={18}/> 列印正式報告</button>
                         </div>
                     </div>
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl underline underline-offset-[12px] font-black decoration-[3px]">師資遴選審核報告書</h2>
-                        <div className="flex justify-between mt-6 text-xs text-slate-500 px-2 font-bold uppercase tracking-widest"><span>專案年度：{selected.year}</span><span>報告日期：{new Date().toLocaleDateString()}</span></div>
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl underline underline-offset-[16px] decoration-[3px] tracking-widest font-black">師資遴選審核報告書</h2>
+                        <div className="flex justify-between mt-10 text-xs text-slate-400 font-bold px-4 font-black"><span>專案年度：{selected.year} 年度</span><span>報告日期：{new Date().toLocaleDateString()}</span></div>
                     </div>
                     <table className="w-full border-2 border-slate-900 mb-6 font-black">
                         <tbody>
-                            <tr><td className="bg-slate-100 p-3 border-2 border-slate-900 w-24 text-center text-sm uppercase">課程名稱</td><td className="p-3 border-2 border-slate-900 text-xl font-black" colSpan="3">{selected.courseName}</td></tr>
-                            <tr><td className="bg-slate-100 p-3 border-2 border-slate-900 w-24 text-center text-sm uppercase">評分人數</td><td className="p-3 border-2 border-slate-900 font-bold" colSpan="3">{currentScores.length} 位委員</td></tr>
+                            <tr><td className="bg-slate-100 p-3 border-2 border-slate-900 w-24 text-center text-sm font-black">課程名稱</td><td className="p-3 border-2 border-slate-900 text-xl font-black" colSpan="3">{selected.courseName}</td></tr>
+                            <tr><td className="bg-slate-100 p-3 border-2 border-slate-900 w-24 text-center text-sm font-black">評分人數</td><td className="p-3 border-2 border-slate-900 font-black" colSpan="3">{currentScores.length} 位委員</td></tr>
                         </tbody>
                     </table>
-                    <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 mb-4">一、評分數據彙整 (各項明細)</h3>
+                    <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 mb-4 font-black">一、評分數據彙整 (各項明細)</h3>
                     {(selected.instructors || []).map((ins, insIdx) => (
-                        <div key={insIdx} className="mb-6">
-                            <h4 className="font-black text-indigo-700 mb-2 italic flex items-center gap-2 text-sm uppercase">● 受評講師：{ins.name} ({ins.type === 'internal' ? '內部' : '外聘'})</h4>
+                        <div key={insIdx} className="mb-6 font-black">
+                            <h4 className="font-black text-indigo-700 mb-2 italic flex items-center gap-2 text-sm font-black uppercase">● 受評講師：{ins.name} ({ins.type === 'internal' ? '內部' : '外聘'})</h4>
                             <table className="w-full border-collapse border-2 border-slate-900 text-center text-xs font-black">
                                 <thead className="bg-slate-100">
-                                    <tr><th className="border-2 border-slate-900 p-2">委員名稱</th>{(selected.scoringItems || []).map((item, i)=><th key={i} className="border-2 border-slate-900 p-2">{item.label}<br/><span className="text-[9px] opacity-60">({item.weight}%)</span></th>)}<th className="border-2 border-slate-900 p-2 bg-indigo-100">加權總分</th></tr>
+                                    <tr><th className="border-2 border-slate-900 p-2 font-black">委員名稱</th>{(selected.scoringItems || []).map((item, i)=><th key={i} className="border-2 border-slate-900 p-2 font-black">{item.label}<br/><span className="text-[9px] opacity-60">({item.weight}%)</span></th>)}<th className="border-2 border-slate-900 p-2 bg-indigo-100 font-black">加權總分</th></tr>
                                 </thead>
                                 <tbody>
                                     {currentScores.map((s, idx) => (
                                         <tr key={idx}>
-                                            <td className="border-2 border-slate-900 p-2 bg-slate-50 font-bold">{s.evaluatorName}</td>
-                                            {(s.instructorScores[insIdx]?.itemScores || []).map((val, vIdx) => (<td key={vIdx} className="border-2 border-slate-900 p-2 font-mono">{val}</td>))}
+                                            <td className="border-2 border-slate-900 p-2 bg-slate-50 font-black">{s.evaluatorName}</td>
+                                            {(s.instructorScores[insIdx]?.itemScores || []).map((val, vIdx) => (<td key={vIdx} className="border-2 border-slate-900 p-2 font-mono font-black">{val}</td>))}
                                             <td className="border-2 border-slate-900 p-2 text-indigo-600 font-black">{(s.instructorScores[insIdx]?.itemScores || []).reduce((acc, score, kIdx) => acc + (score * selected.scoringItems[kIdx].weight) / 100, 0).toFixed(1)}</td>
                                         </tr>
                                     ))}
-                                    <tr className="bg-indigo-700 text-white font-black"><td className="border-2 border-slate-900 p-2 uppercase text-[9px] tracking-widest">平均得分</td>{(selected.scoringItems || []).map((_, iIdx) => (<td key={iIdx} className="border-2 border-slate-900 p-2 font-mono">{(currentScores.reduce((acc, s) => acc + (s.instructorScores[insIdx]?.itemScores[iIdx] || 0), 0) / currentScores.length).toFixed(1)}</td>))}<td className="border-2 border-slate-900 p-2 text-lg italic font-black">{calculateAvg(insIdx)}</td></tr>
+                                    <tr className="bg-indigo-700 text-white font-black"><td className="border-2 border-slate-900 p-2 uppercase text-[9px] tracking-widest font-black">平均得分</td>{(selected.scoringItems || []).map((_, iIdx) => (<td key={iIdx} className="border-2 border-slate-900 p-2 font-mono font-black">{(currentScores.reduce((acc, s) => acc + (s.instructorScores[insIdx]?.itemScores[iIdx] || 0), 0) / currentScores.length).toFixed(1)}</td>))}<td className="border-2 border-slate-900 p-2 text-lg italic font-black">{calculateAvg(insIdx)}</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     ))}
                     <div className="page-break"></div>
-                    <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 pt-4 mb-4">二、各委員綜合評語</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 pt-4 mb-4 font-black">二、各委員綜合評語</h3>
+                    <div className="grid md:grid-cols-2 gap-4 font-black">
                         {(selected.instructors || []).map((ins, idx) => (
                             <div key={idx} className="border-2 border-slate-900 p-4 rounded-xl bg-white shadow-[4px_4px_0px_#000]">
-                                <div className="font-black text-indigo-600 border-b border-indigo-50 pb-2 mb-3 flex items-center gap-2 text-xs uppercase">
+                                <div className="font-black text-indigo-600 border-b border-indigo-50 pb-2 mb-3 flex items-center gap-2 text-xs uppercase font-black">
                                     <Icon name="Users" size={14}/> {ins.name} 講師之評語彙整
                                 </div>
-                                <ul className="space-y-2 text-xs font-bold text-slate-700 italic">
+                                <ul className="space-y-2 text-xs font-bold text-slate-700 italic font-black">
                                     {currentScores.map((s, si)=> s.instructorScores[idx]?.comment && (
-                                        <li key={si} className="border-l-2 border-slate-200 pl-2 py-1 leading-relaxed">
+                                        <li key={si} className="border-l-2 border-slate-200 pl-2 py-1 leading-relaxed font-black">
                                             「{s.instructorScores[idx].comment}」<br/>
                                             <span className="text-[9px] text-slate-400 not-italic font-black">— {s.evaluatorName} 委員</span>
                                         </li>
                                     ))}
-                                    {!currentScores.some(s => s.instructorScores[idx]?.comment) && <li className="text-slate-300 italic text-[9px]">尚無相關評語紀錄</li>}
+                                    {!currentScores.some(s => s.instructorScores[idx]?.comment) && <li className="text-slate-300 italic text-[9px] font-black">尚無相關評語紀錄</li>}
                                 </ul>
                             </div>
                         ))}
                     </div>
-                    <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 pt-4 mb-4">三、審查結果</h3>
-                    <div className="border-2 border-slate-900 p-4 rounded-xl"><textarea className="w-full min-h-[100px] p-1 font-black outline-none resize-none leading-relaxed text-sm bg-transparent" value={reviewText} onChange={(e)=>setReviewText(e.target.value)} placeholder="填寫最終遴選審查結果..." /></div>
+                    
+                    <div className="mt-8 space-y-8 font-black">
+                        <div className="no-print bg-slate-50 p-4 rounded-xl border border-indigo-100">
+                            <h3 className="text-sm font-black text-indigo-800 mb-3 flex items-center gap-2"><Icon name="Trophy" size={16}/> 設定最終勝任講師</h3>
+                            <select className="w-full p-3 border-2 border-indigo-200 rounded-xl outline-none font-black text-indigo-700" value={winner} onChange={(e)=>setWinner(e.target.value)}>
+                                <option value="">-- 請選擇勝任講師 --</option>
+                                {selected.instructors.map((i,idx)=><option key={idx} value={i.name}>{i.name} ({i.type==='internal'?'內部':'外聘'})</option>)}
+                            </select>
+                        </div>
+                        
+                        <div className="space-y-4 font-black">
+                            <h3 className="text-lg font-black border-l-4 border-indigo-600 pl-3 bg-indigo-50/50 py-1 pt-4 font-black">三、審查結果</h3>
+                            <div className="border-2 border-slate-900 p-4 rounded-xl min-h-[60px] flex items-center">
+                                <span className="font-black text-slate-500 mr-2">最終勝任講師：</span>
+                                <span className="text-xl font-black text-indigo-700 underline underline-offset-4">{winner || "未設定"}</span>
+                            </div>
+                            <div className="border-2 border-slate-900 p-4 rounded-xl">
+                                <textarea className="w-full min-h-[100px] p-1 font-black outline-none resize-none leading-relaxed text-sm bg-transparent font-black" value={reviewText} onChange={(e)=>setReviewText(e.target.value)} placeholder="填寫最終遴選審查結果..." />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="pt-16 grid grid-cols-2 gap-12 text-center font-black">
-                        <div className="space-y-12"><div className="underline underline-offset-4 tracking-widest text-sm uppercase">評分人員（共簽）</div><div className="border-b-2 border-slate-900 w-full h-6"></div></div>
-                        <div className="space-y-12"><div className="underline underline-offset-4 tracking-widest text-sm uppercase">管理部</div><div className="border-b-2 border-slate-900 w-full h-6"></div></div>
+                        <div className="space-y-12"><div className="underline underline-offset-4 tracking-widest text-sm uppercase font-black">評分人員（共簽）</div><div className="border-b-2 border-slate-900 w-full h-6 font-black"></div></div>
+                        <div className="space-y-12"><div className="underline underline-offset-4 tracking-widest text-sm uppercase font-black">管理部</div><div className="border-b-2 border-slate-900 w-full h-6 font-black"></div></div>
                     </div>
                 </div>
             );
             return (
-                <div className="space-y-6">
-                    {filteredForms.map(f => (
-                        <button key={f.id} onClick={()=>setSelected(f)} className="w-full bg-white p-6 rounded-[2rem] border-2 border-transparent flex justify-between items-center group shadow-sm hover:border-indigo-500 hover:shadow-xl transition-all">
-                            <div className="text-left font-black"><h4 className="text-xl group-hover:text-indigo-600 transition-colors font-black">{f.courseName}</h4><p className="text-xs text-slate-400 mt-2 uppercase tracking-widest font-black">{f.year} 年度 ∙ 已有 {scores.filter(s=>s.formId===f.id).length} 份評核資料</p></div>
-                            <div className="bg-slate-50 p-4 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300"><Icon name="ChevronRight" size={24} /></div>
+                <div className="space-y-6 font-black">
+                    {forms.filter(f => f.year === selectedYear).map(f => (
+                        <button key={f.id} onClick={()=>setSelected(f)} className="w-full bg-white p-6 rounded-[2rem] border-2 border-transparent flex justify-between items-center group shadow-sm hover:border-indigo-500 hover:shadow-xl transition-all font-black">
+                            <div className="text-left font-black">
+                                <h4 className="text-xl group-hover:text-indigo-600 transition-colors font-black">{f.courseName}</h4>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <p className="text-xs text-slate-400 uppercase tracking-widest font-black">{f.year} 年度 ∙ 已有 {scores.filter(s=>s.formId===f.id).length} 份評核</p>
+                                    {f.selectedInstructor && <span className="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full border border-green-200">★ 勝任: {f.selectedInstructor}</span>}
+                                </div>
+                            </div>
+                            <div className="bg-slate-50 p-4 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 font-black"><Icon name="ChevronRight" size={24} /></div>
                         </button>
                     ))}
                 </div>
@@ -553,14 +572,18 @@
 
         const StatsView = ({ forms, scores, Icon, selectedYear }) => {
             const [statsTab, setStatsTab] = useState('internal');
+            
+            const yearlyForms = useMemo(() => forms.filter(f => f.year === selectedYear), [forms, selectedYear]);
+
             const getAggregatedStats = () => {
                 const instructorMap = new Map();
-                const yearlyForms = forms.filter(f => f.year === selectedYear);
                 yearlyForms.forEach(f => {
                     const fScores = scores.filter(s => s.formId === f.id); if (fScores.length === 0) return;
                     (f.instructors || []).forEach((ins, insIdx) => {
-                        if (!instructorMap.has(ins.name)) instructorMap.set(ins.name, { name: ins.name, type: ins.type, itemAverages: {}, totalWeightedScore: 0, totalCount: 0 });
+                        if (!instructorMap.has(ins.name)) instructorMap.set(ins.name, { name: ins.name, type: ins.type, itemAverages: {}, totalWeightedScore: 0, totalCount: 0, winCount: 0 });
                         const data = instructorMap.get(ins.name);
+                        
+                        // 計算平均分數數據
                         fScores.forEach(s => {
                             const insS = s.instructorScores[insIdx]; if (!insS) return;
                             data.totalCount++;
@@ -573,29 +596,100 @@
                         });
                     });
                 });
+                
+                // 計算勝任次數 (依據 form 的 selectedInstructor 欄位)
+                yearlyForms.forEach(f => {
+                    if (f.selectedInstructor) {
+                        const winner = instructorMap.get(f.selectedInstructor);
+                        if (winner) winner.winCount += 1;
+                    }
+                });
+
                 const finalResults = Array.from(instructorMap.values()).map(d => {
                     const itemStats = {}; Object.keys(d.itemAverages).forEach(label => itemStats[label] = (d.itemAverages[label].sum / d.itemAverages[label].count).toFixed(1));
-                    return { name: d.name, type: d.type, itemStats, avg: d.totalCount > 0 ? (d.totalWeightedScore / d.totalCount).toFixed(1) : "0.0" };
+                    return { name: d.name, type: d.type, itemStats, avg: d.totalCount > 0 ? (d.totalWeightedScore / d.totalCount).toFixed(1) : "0.0", winCount: d.winCount };
                 });
-                return finalResults.sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+                return finalResults;
             };
-            const stats = getAggregatedStats().filter(s => s.type === statsTab);
-            const allLabels = [...new Set(stats.flatMap(s => Object.keys(s.itemStats)))];
+
+            const allData = getAggregatedStats();
+            
+            const stats = useMemo(() => {
+                if (statsTab === 'wins') {
+                    return [...allData].sort((a, b) => b.winCount - a.winCount);
+                }
+                return allData.filter(s => s.type === statsTab).sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+            }, [allData, statsTab]);
+
+            const allLabels = useMemo(() => [...new Set(stats.flatMap(s => Object.keys(s.itemStats)))], [stats]);
+
             return (
                 <div className="space-y-6 font-black animate-in fade-in duration-700">
-                    <div className="flex bg-white p-1 rounded-2xl shadow-sm border w-fit mx-auto"><button onClick={()=>setStatsTab('internal')} className={`px-10 py-3 rounded-xl transition-all font-black ${statsTab==='internal'?'bg-indigo-600 text-white shadow-md':'text-slate-400 hover:text-indigo-600'}`}>內部講師</button><button onClick={()=>setStatsTab('external')} className={`px-10 py-3 rounded-xl transition-all font-black ${statsTab==='external'?'bg-amber-600 text-white shadow-md':'text-slate-400 hover:text-amber-600'}`}>外聘講師</button></div>
-                    <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm">
-                        <div className="flex items-center gap-3 mb-8 border-b pb-4"><Icon name="BarChart2" className={statsTab==='internal'?'text-indigo-600':'text-amber-600'}/><h3 className="text-2xl font-black">{selectedYear} 年度 {statsTab==='internal'?'內部':'外聘'}講師表現排行榜</h3></div>
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-[10px] border-b text-slate-400 uppercase tracking-widest font-black"><tr><th className="p-5">排名</th><th className="p-5">講師姓名</th>{allLabels.map(l=>(<th key={l} className="p-5 text-center">{l}<br/><span className="text-[9px] opacity-60">(平均)</span></th>))}<th className="p-5 text-center bg-indigo-50/50">加權總平均</th></tr></thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {stats.map((d, i)=>(<tr key={i} className="hover:bg-slate-50/80 transition-colors font-black text-slate-800"><td className="p-5 text-slate-300 font-mono text-xl italic">#{i+1}</td><td className="p-5 text-xl font-black">{d.name}</td>{allLabels.map(l=>(<td key={l} className="p-5 text-center font-mono text-slate-600">{d.itemStats[l] || "-"}</td>))}<td className={`p-5 text-center text-3xl italic font-black ${statsTab==='internal'?'text-indigo-700':'text-amber-700'}`}>{d.avg}</td></tr>))}
-                                    {stats.length === 0 && <tr><td colSpan={allLabels.length + 3} className="p-10 text-center text-slate-300 italic">尚無相關統計數據</td></tr>}
+                    <div className="flex bg-white p-1 rounded-2xl shadow-sm border w-fit mx-auto font-black">
+                        <button onClick={()=>setStatsTab('internal')} className={`px-8 py-3 rounded-xl transition-all font-black ${statsTab==='internal'?'bg-indigo-600 text-white shadow-md':'text-slate-400 hover:text-indigo-600'}`}>內部講師</button>
+                        <button onClick={()=>setStatsTab('external')} className={`px-8 py-3 rounded-xl transition-all font-black ${statsTab==='external'?'bg-amber-600 text-white shadow-md':'text-slate-400 hover:text-amber-600'}`}>外聘講師</button>
+                        <button onClick={()=>setStatsTab('wins')} className={`px-8 py-3 rounded-xl transition-all font-black ${statsTab==='wins'?'bg-green-600 text-white shadow-md':'text-slate-400 hover:text-green-600'}`}>勝任數排名</button>
+                    </div>
+                    
+                    <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm font-black">
+                        <div className="flex items-center gap-3 mb-8 border-b pb-4 font-black text-slate-800">
+                            <Icon name={statsTab==='wins'?'Trophy':'BarChart2'} className={statsTab==='wins'?'text-green-600':(statsTab==='internal'?'text-indigo-600':'text-amber-600')}/>
+                            <h3 className="text-2xl font-black">{selectedYear} 年度 {statsTab==='wins'?'講師勝任總次數排行榜':(statsTab==='internal'?'內部':'外聘')+'講師表現排行榜'}</h3>
+                        </div>
+                        
+                        <div className="overflow-x-auto custom-scrollbar font-black">
+                            <table className="w-full text-left font-black">
+                                <thead className="bg-slate-50 text-[10px] border-b text-slate-400 uppercase tracking-widest font-black">
+                                    <tr>
+                                        <th className="p-5 font-black">排名</th>
+                                        <th className="p-5 font-black">講師姓名</th>
+                                        {statsTab !== 'wins' ? (
+                                            <>
+                                                {allLabels.map(l=>(<th key={l} className="p-5 text-center font-black">{l}<br/><span className="text-[9px] opacity-60">(平均)</span></th>))}
+                                                <th className="p-5 text-center bg-indigo-50/50 font-black">加權總平均</th>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <th className="p-5 text-center font-black">身份類型</th>
+                                                <th className="p-5 text-center font-black">總平均分</th>
+                                                <th className="p-5 text-center bg-green-50 font-black">總勝任次數</th>
+                                            </>
+                                        )}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 font-black text-slate-800">
+                                    {stats.map((d, i)=>(
+                                        <tr key={i} className="hover:bg-slate-50/80 transition-colors font-black">
+                                            <td className="p-5 text-slate-300 text-xl italic font-black">#{i+1}</td>
+                                            <td className="p-5 text-xl font-black">{d.name}</td>
+                                            {statsTab !== 'wins' ? (
+                                                <>
+                                                    {allLabels.map(l=>(<td key={l} className="p-5 text-center font-mono text-slate-600 font-black">{d.itemStats[l] || "-"}</td>))}
+                                                    <td className={`p-5 text-center text-3xl italic font-black ${statsTab==='internal'?'text-indigo-700':'text-amber-700'}`}>{d.avg}</td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td className="p-5 text-center font-black text-slate-500">{d.type==='internal'?'內部':'外聘'}</td>
+                                                    <td className="p-5 text-center font-mono font-black">{d.avg}</td>
+                                                    <td className="p-5 text-center font-black text-4xl text-green-600 italic bg-green-50/20">{d.winCount} 次</td>
+                                                </>
+                                            )}
+                                        </tr>
+                                    ))}
+                                    {stats.length === 0 && <tr><td colSpan={10} className="p-10 text-center text-slate-300 italic font-black">此年度尚無統計數據</td></tr>}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                    
+                    {statsTab === 'wins' && stats.length > 0 && (
+                        <div className="bg-white p-10 rounded-[2.5rem] border text-center font-black animate-in zoom-in-95">
+                            <div className="text-slate-400 font-black text-sm uppercase mb-2">年度最受歡迎講師 (勝任次數最高)</div>
+                            <div className="text-6xl font-black text-green-600 tracking-tighter flex items-center justify-center gap-4">
+                                <Icon name="Trophy" size={48}/> {stats[0].name}
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
